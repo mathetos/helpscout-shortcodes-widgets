@@ -1,2 +1,2 @@
-# helpscout-shortcodes-widgets
-Display Helpscout report data on your WordPress site with easy shortcodes and/or widgets.
+# helpscout-shortcodes
+Shortcodes to output data from your HelpScout account in WordPress
