@@ -10,44 +10,56 @@ License: GPLv2 or later
 Text Domain: hswpsc
 */
 
-define( 'HSWPSC_SDK_DIR', __DIR__ . '\sdks' );
-define( 'HSWPSC_HS_SDK', __DIR__ . '\sdks\helpscout' );
+define( 'HSWPSC_HS_SDK', __DIR__ . '\vendor\HelpScout' );
+define( 'HSWPSC_URL', plugin_dir_url( __FILE__ ) );
+define( 'HS_SDK_PATH', plugin_dir_path( __FILE__ ) );
 
+add_shortcode( 'hs_great_ratings', 'get_ratings_with_comments' );
 
-add_shortcode( 'hs_great_ratings', 'hs_great_ratings_function' );
+function hs_great_ratings_function( $atts, $days ) {
+	$number = ( !empty($atts['number']) ? $atts['number'] : '3' );
+	$days = ( !empty($atts['days']) ? $atts['days'] : '14' );
 
-include HSWPSC_HS_SDK . '\src\HelpScout\ApiClient.php';
-include HSWPSC_HS_SDK . '\vendor\autoload.php';
+	$atts = array(
+		'number'    => $number,
+		'days'      => $days,
+	);
 
-use HelpScout\ApiClient;
+	$review = get_ratings_with_comments( $days = $atts['days'] );
 
-function hs_great_ratings_function( $atts ) {
+	var_dump($review);
 
-	$hs = ApiClient::getInstance();
-	$hs->setKey( HSWPSC_HS_API_KEY );
+}
 
-	$ratings = $hs->getHappinessRatingsReport( [
-		'page'   => 10,
-		'rating' => 0,
-		'start'  => '2017-01-01T00:00:00Z',
-		'end'    => '2017-12-31T23:59:59Z',
-		'start'  => date( 'Y-m-d', strtotime( '-120 days' ) ) . 'T00:00:00Z',
-		'end'    => date( 'Y-m-d' ) . 'T23:59:59Z'
-	] );
-	$results = $ratings->results;
+function get_ratings_with_comments($days = '') {
 
-	//var_dump( $results );
-	ob_start();
-	foreach ( $results as $rating ) {
-		$comment  = $rating->ratingComments;
-		$customer = $rating->ratingCustomerName;
+	// Arguments for POSTing the Invitation to Checkr based on the Candidate we just created.
+	$today = date( 'Y-m-d' );
+	$start_date = date('Y-m-d', strtotime($today.' - ' .$days));
 
-		if ( ! empty( $comment ) ) {
-			echo '<p>"' . $comment . '" ~<em>' . $customer . '</em></p>';
-		}
+	$ratings_args = array(
+		'method'            => 'GET',
+		'headers'           => array(
+			'Authorization' => 'Basic ' . base64_encode( HSWPSC_HS_API_KEY  . ':' . 'X' )
+		),
+		'body'              => array(
+			'page'   => 5,
+			'rating' => 0,
+			'start'  => $start_date . 'T00:00:00Z',
+			'end'    => date( 'Y-m-d' ) . 'T23:59:59Z'
+		),
+	);
+
+	$ratings_response = wp_remote_request( 'https://api.helpscout.net/v1/reports/happiness/ratings.json',  $ratings_args );
+	
+	if ( is_wp_error( $ratings_response) ) {
+		return false; // Bail early
 	}
 
-	$output = ob_get_clean();
+	$results = wp_remote_retrieve_body( $ratings_response );
 
-	return $output;
+	$data = json_decode( $results );
+
+	var_dump( $data );
+
 }
