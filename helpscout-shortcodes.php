@@ -16,26 +16,18 @@ define( 'HS_SDK_PATH', plugin_dir_path( __FILE__ ) );
 
 add_shortcode( 'hs_great_ratings', 'get_ratings_with_comments' );
 
-function hs_great_ratings_function( $atts, $days ) {
-	$number = ( !empty($atts['number']) ? $atts['number'] : '3' );
-	$days = ( !empty($atts['days']) ? $atts['days'] : '14' );
+function get_ratings_with_comments( $atts ) {
+
+	$days = ( !empty($atts['days']) ? $atts['days'] : '30' );
 
 	$atts = array(
-		'number'    => $number,
-		'days'      => $days,
+		'days'  => $days,
 	);
 
-	$review = get_ratings_with_comments( $days = $atts['days'] );
+	$d = new DateTime( date('Y-m-d') );
+	$d->modify( '- ' . $atts['days'] . ' days' );
 
-	var_dump($review);
-
-}
-
-function get_ratings_with_comments($days = '') {
-
-	// Arguments for POSTing the Invitation to Checkr based on the Candidate we just created.
-	$today = date( 'Y-m-d' );
-	$start_date = date('Y-m-d', strtotime($today.' - ' .$days));
+	$start_date = $d->format( 'Y-m-d' );
 
 	$ratings_args = array(
 		'method'            => 'GET',
@@ -44,7 +36,7 @@ function get_ratings_with_comments($days = '') {
 		),
 		'body'              => array(
 			'page'   => 5,
-			'rating' => 0,
+			'rating' => 1,
 			'start'  => $start_date . 'T00:00:00Z',
 			'end'    => date( 'Y-m-d' ) . 'T23:59:59Z'
 		),
@@ -60,6 +52,17 @@ function get_ratings_with_comments($days = '') {
 
 	$data = json_decode( $results );
 
-	var_dump( $data );
+	foreach ($data->results as $rating ) {
+		$comments = $rating->ratingComments;
+
+		if ( !empty($comments) ) { ?>
+			<p>"<?php echo $comments; ?>"
+				<br /><small>Customer: <?php echo $rating->ratingCustomerName; ?></small>
+				<br /><small>Date: <?php echo $rating->ratingCreatedAt; ?></small>
+			</p>
+		<?php }
+
+	}
+	//var_dump( $data->results );
 
 }
