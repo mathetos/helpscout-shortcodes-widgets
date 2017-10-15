@@ -51,8 +51,8 @@ function get_ratings_with_comments($days = '') {
 	);
 
 	$ratings_response = wp_remote_request( 'https://api.helpscout.net/v1/reports/happiness/ratings.json',  $ratings_args );
-	
-	if ( is_wp_error( $ratings_response) ) {
+
+	if ( $ratings_response['response']['code'] == '401' ) {
 		return false; // Bail early
 	}
 
