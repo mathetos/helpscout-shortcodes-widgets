@@ -1,68 +1,72 @@
 <?php
 /*
-Plugin Name: HelpScout Shortcodes and Widgets
+Plugin Name: Blocks (and Shortcodes) for HelpScout
 Plugin URI: https://www.mattcromwell.com/
 Description: Shortcodes to output HelpScout data into your WordPress website.
-Version: 1.0
+Version: 0.9.0
 Author: Matt Cromwell
 Author URI: https://www.mattcromwell.com
 License: GPLv2 or later
-Text Domain: hswpsc
+Text Domain: bas4hs
 */
 
-define( 'HSWPSC_HS_SDK', __DIR__ . '\vendor\HelpScout' );
-define( 'HSWPSC_URL', plugin_dir_url( __FILE__ ) );
-define( 'HS_SDK_PATH', plugin_dir_path( __FILE__ ) );
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
-add_shortcode( 'hs_great_ratings', 'get_ratings_with_comments' );
+// Define Constants
+defined('BAS4HS_PATH') || define( 'BAS4HS_PATH', plugin_dir_path( __FILE__ ) );
+defined('BAS4HS_URL') || define( 'BAS4HS_URL', plugin_dir_url( __FILE__ ) );
+defined('BAS4HS_VERSION') || define( 'BAS4HS_VERSION', '0.9.0' );
 
-function get_ratings_with_comments( $atts ) {
+/**
+ * Load the textdomain of the plugin
+ *
+ * @return void
+ */
+function bas4hs_load_plugin_textdomain() {
+    $locale = apply_filters( 'bas4hs_locale', get_locale(), 'bas4hs' );
 
-	$days = ( !empty($atts['days']) ? $atts['days'] : '30' );
+    load_textdomain( 'bas4hs', trailingslashit( WP_PLUGIN_DIR ) . 'bas4hs' . '/languages/' . 'bas4hs' . '-' . $locale . '.mo' );
+}
 
-	$atts = array(
-		'days'  => $days,
-	);
+add_action( 'plugins_loaded', 'bas4hs_load_plugin_textdomain', 1 );
 
-	$d = new DateTime( date('Y-m-d') );
-	$d->modify( '- ' . $atts['days'] . ' days' );
+/**
+ *  PHP Minimum Version Compatibility
+ */
+if ( version_compare( PHP_VERSION, '5.6.0', '<' ) ) {
+    function bas4hs_deactivate() {
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+    }
+    function bas4hs_show_deactivation_notice() {
+        echo wp_kses_post(
+            sprintf(
+                '<div class="notice notice-error"><p>%s</p></div>',
+                __( '"HelpScout Blocks (and Shortcodes) for WordPress" requires PHP 5.6 or newer to function well. Your environment does not meet that criteria and thus the plugin has been automatically deactivated. Please contact your webhost and request to have your PHP version updated to at least version 7.1.', 'bas4hs' )
+            )
+        );
+    }
+    add_action( 'admin_init', 'bas4hs_deactivate' );
+    add_action( 'admin_notices', 'bas4hs_show_deactivation_notice' );
+    // Return early to prevent loading the other includes.
+    return;
+}
 
-	$start_date = $d->format( 'Y-m-d' );
+/**
+ * Get the settings of the plugin in a filterable way
+ *
+ * @return array
+ */
+function bas4hs_get_settings() {
+    return apply_filters( 'pn_get_settings', get_option( 'bas4hs-settings' ) );
+}
 
-	$ratings_args = array(
-		'method'            => 'GET',
-		'headers'           => array(
-			'Authorization' => 'Basic ' . base64_encode( HSWPSC_HS_API_KEY  . ':' . 'X' )
-		),
-		'body'              => array(
-			'page'   => 5,
-			'rating' => 1,
-			'start'  => $start_date . 'T00:00:00Z',
-			'end'    => date( 'Y-m-d' ) . 'T23:59:59Z'
-		),
-	);
+// Initialize all our necessary files upon activation
 
-	$ratings_response = wp_remote_request( 'https://api.helpscout.net/v1/reports/happiness/ratings.json',  $ratings_args );
+add_action( 'plugins_loaded', 'bas4hs_includes' );
 
-	if ( $ratings_response['response']['code'] == '401' ) {
-		return false; // Bail early
-	}
-
-	$results = wp_remote_retrieve_body( $ratings_response );
-
-	$data = json_decode( $results );
-
-	foreach ($data->results as $rating ) {
-		$comments = $rating->ratingComments;
-
-		if ( !empty($comments) ) { ?>
-			<p>"<?php echo $comments; ?>"
-				<br /><small>Customer: <?php echo $rating->ratingCustomerName; ?></small>
-				<br /><small>Date: <?php echo $rating->ratingCreatedAt; ?></small>
-			</p>
-		<?php }
-
-	}
-	//var_dump( $data->results );
-
+function bas4hs_includes() {
+    require_once( BAS4HS_PATH . 'includes/class-shortcodes.php');
 }
