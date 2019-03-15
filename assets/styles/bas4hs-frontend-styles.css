@@ -1,12 +1,64 @@
-.bas4hs-reviews-wrapper {
+.bas4hs-collection {
     display: grid;
-    grid-template-columns: repeat( auto-fit, minmax(250px, 1fr) );
+    grid-template-columns: repeat( auto-fit, minmax(300px, 1fr) );
     grid-gap: 1rem;
     font-size: 1rem;
 }
-.bas4hs-item {
-    border: 1px solid #999;
-    border-radius: 6px;
+.bas4hs-review--item {
+    border: 1px solid #ccc;
+    border-radius: 4px;
     padding: 1rem;
-    box-shadow: 0px 0px 24px rgba(0,0,0,0.25);
+    box-shadow: 0px 0px 16px rgba(0,0,0,0.15);
+    position: relative;
+    padding-top: 5rem;
+    overflow: hidden;
+}
+
+.bas4hs-review--item header {
+    position: absolute;
+    height: 50px;
+    display: inline-block;
+    top: 0;
+    left: 0;
+    right: 0;
+    color: white;
+    padding: 15px 15px 15px 60px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    overflow: hidden;
+    background: #92cddd url(../images/helpscout-icon-800.png) no-repeat 15px;
+    background-size: 40px;
+}
+
+.bas4hs-review--item.rating-2 header {
+    background-color: #dec292;
+}
+
+.bas4hs-review--item.rating-3 header {
+    background-color: #bd3737;
+}
+
+.bas4hs-review--item header span {
+    top: 50%;
+    display: block;
+    transform: translateY(-50%);
+    position: relative;
+}
+
+.bas4hs-description p.review-comment {
+    font-size: 1.4rem;
+    font-style: italic;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.bas4hs-description .bas4hs-meta {
+    font-style: italic;
+    font-size: 1rem;
+}
+
+.bas4hs-collection p.bas4hs-review--total {
+    grid-column: 1/-1;
 }
